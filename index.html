@@ -1,0 +1,981 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#18213a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Orapa MJ">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style>
+<title>Orapa Mine – Maître du jeu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: one-screen phone app on the mine's slate-navy board; the grey grid is the hero, gem colours are the only accents. Single dark look by design. */
+:root{
+  --bg:#18213a;          /* plateau navy */
+  --panel:#222d4b;
+  --panel-2:#2b3860;
+  --line:#3a4874;
+  --fg:#f1ead2;          /* cream numerals */
+  --muted:#a6acc4;
+  --grid-bg:#8b8e93;
+  --grid-line:#ede3bd;
+  --amber:#f4b228;
+  --amber-ink:#2a1d00;
+  --danger:#ff6b6b;
+  --ok:#5fd18a;
+  --f-display:"Bungee", "Arial Black", Impact, sans-serif;
+  --f-body:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.4;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.wrap{max-width:560px;margin:0 auto;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:12px 28px;display:flex;flex-direction:column;gap:14px}
+h1,h2{font-family:var(--f-display);font-weight:400;margin:0;letter-spacing:.02em;text-wrap:balance}
+h1{font-size:30px;line-height:1.05}
+h2{font-size:18px}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.muted{color:var(--muted)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px}
+
+.btn{border:1px solid var(--line);background:var(--panel-2);border-radius:12px;padding:12px 14px;font-weight:700;min-height:46px}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.primary{background:var(--amber);color:var(--amber-ink);border-color:var(--amber)}
+.btn.ghost{background:transparent}
+.btn.small{min-height:36px;padding:6px 10px;font-size:14px}
+.btn.wide{width:100%}
+.iconbtn{border:1px solid var(--line);background:var(--panel-2);border-radius:10px;width:40px;height:40px;display:grid;place-items:center;font-size:18px}
+
+/* setup */
+.hero{display:flex;gap:14px;align-items:center;padding-top:6px}
+.hero svg{flex:none}
+.players{display:flex;flex-direction:column;gap:8px}
+.prow{display:flex;gap:8px;align-items:center}
+.prow input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--line);color:var(--fg);border-radius:10px;padding:10px 12px;font:inherit}
+.seg{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:transparent;border-radius:9px;padding:8px 6px;font-weight:700;color:var(--muted);min-height:38px}
+.seg button[aria-pressed="true"]{background:var(--panel-2);color:var(--fg);box-shadow:inset 0 0 0 1px var(--line)}
+.opt{display:flex;gap:12px;align-items:flex-start}
+.opt input{width:22px;height:22px;margin-top:2px;accent-color:var(--amber);flex:none}
+.opt small{display:block;color:var(--muted)}
+
+/* play */
+.topbar{display:flex;align-items:center;gap:10px}
+.topbar .grow{flex:1;min-width:0}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.chip{flex:none;border:1px solid var(--line);border-radius:999px;padding:5px 10px;font-size:14px;display:flex;gap:6px;align-items:center;background:var(--panel)}
+.chip.turn{background:var(--amber);color:var(--amber-ink);border-color:var(--amber);font-weight:700}
+.chip.out{opacity:.45;text-decoration:line-through}
+.pips{display:inline-flex;gap:2px}
+.pip{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.9}
+.pip.used{opacity:.25}
+
+.boardbox{background:#2a3555;border-radius:14px;padding:6px;border:1px solid var(--line)}
+svg.board{display:block;width:100%;height:auto;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.lbl text{font-family:var(--f-display);font-size:.5px;fill:var(--fg);text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.lbl rect{fill:transparent;rx:.2px}
+.lbl.sel rect{fill:var(--amber)}
+.lbl.sel text{fill:var(--amber-ink)}
+.lbl.tap{cursor:pointer}
+.cellhit{fill:transparent}
+.cellhit.tap{cursor:pointer}
+.cellhit.sel{fill:rgba(244,178,40,.55)}
+
+.panel.result{flex-direction:row;gap:14px;align-items:center;min-height:76px}
+.swatch{width:46px;height:46px;border-radius:12px;flex:none;border:2px solid rgba(255,255,255,.25)}
+.swatch.transparent{background:repeating-linear-gradient(45deg,transparent 0 6px,rgba(241,234,210,.18) 6px 8px);border-style:dashed}
+.result .big{font-family:var(--f-display);font-size:22px;line-height:1.1}
+.result .sub{color:var(--muted);font-size:15px}
+.ask{display:flex;gap:8px}
+.ask .btn.primary{flex:1}
+
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.log li{display:grid;grid-template-columns:18px 1fr auto;gap:10px;align-items:center;padding:8px 2px;border-top:1px solid var(--line);font-size:15px}
+.log li:first-child{border-top:0}
+.log .dot{width:16px;height:16px;border-radius:5px;border:1px solid rgba(255,255,255,.3)}
+.log .dot.transparent{background:transparent;border-style:dashed}
+.log .who{color:var(--muted);font-size:13px}
+.log .q{font-family:var(--f-display);font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.empty{color:var(--muted);font-size:15px;padding:4px 2px}
+
+/* propose */
+.tray{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
+.tray button{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:6px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:13px;color:var(--muted);min-height:84px}
+.tray button[aria-pressed="true"]{border-color:var(--amber);box-shadow:0 0 0 2px var(--amber) inset;color:var(--fg)}
+.tray button.placed .st{color:var(--ok)}
+.tray svg{width:64px;height:40px}
+
+.banner{border-radius:12px;padding:12px 14px;font-weight:700}
+.banner.bad{background:rgba(255,107,107,.15);border:1px solid var(--danger)}
+.banner.good{background:rgba(95,209,138,.15);border:1px solid var(--ok)}
+
+.sheet{position:fixed;inset:0;background:rgba(8,12,24,.7);display:flex;align-items:flex-end;justify-content:center;z-index:20;padding-bottom:env(safe-area-inset-bottom,0px)}
+.sheet .panel{width:100%;max-width:560px;border-radius:18px 18px 0 0;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:18px 22px}
+.note{font-size:13px;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){
+  .result.flash .swatch{animation:pop .35s ease-out}
+  @keyframes pop{from{transform:scale(.6)}to{transform:scale(1)}}
+}
+</style>
+</head>
+<body>
+
+
+<!-- SETUP -->
+<section id="setup" class="wrap">
+  <div class="hero">
+    <svg width="64" height="64" viewBox="0 0 8 8" aria-hidden="true">
+      <rect width="8" height="8" rx="1.2" fill="#8b8e93"/>
+      <path d="M1 3 L3 1 L5 3 L3 5 Z" fill="#f2efe6"/>
+      <path d="M4 7 L8 7 L6 5 Z" fill="#2d6cc8"/>
+      <path d="M0.5 6.5 L2 5 H4 L2.5 6.5 Z" fill="#e0393e"/>
+      <path d="M5 1 H7 V3 Z" fill="#f4b228"/>
+    </svg>
+    <div>
+      <div class="eyebrow">Maître du jeu</div>
+      <h1>Orapa Mine</h1>
+    </div>
+  </div>
+  <p class="muted" style="margin:0">L’app cache les gemmes et répond aux rayons. Posez le téléphone au milieu de la table, chacun garde sa feuille de solutions.</p>
+
+  <div class="panel">
+    <h2>Prospecteurs</h2>
+    <div id="players" class="players"></div>
+    <div class="row">
+      <button class="btn small" id="addP">+ Ajouter</button>
+      <span class="note" id="pcount"></span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Mine</h2>
+    <label class="opt"><input type="checkbox" id="optDiamond"><span>Extension Diamant<small>Gemme transparente : elle renvoie le rayon sans le colorer.</small></span></label>
+    <label class="opt"><input type="checkbox" id="optBlack"><span>Extension Corps noir<small>Absorbe le rayon : « le signal a été absorbé ».</small></span></label>
+    <div>
+      <div class="eyebrow" style="margin-bottom:6px">Propositions par joueur</div>
+      <div class="seg" id="segAttempts">
+        <button data-v="1">1</button><button data-v="2">2</button><button data-v="3">3</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Voix</h2>
+    <label class="opt"><input type="checkbox" id="optVoice"><span>Annoncer les réponses à voix haute<small id="voiceInfo">Utilise la synthèse vocale française du téléphone.</small></span></label>
+    <label class="opt"><input type="checkbox" id="optTurn"><span>Annoncer le joueur suivant</span></label>
+    <button class="btn small" id="testVoice" style="align-self:flex-start">🔊 Tester la voix</button>
+  </div>
+
+  <button class="btn primary wide" id="start">Creuser la mine</button>
+  <button class="btn ghost wide" id="resume" hidden>Reprendre la partie en cours</button>
+</section>
+
+<!-- PLAY -->
+<section id="play" class="wrap" hidden>
+  <div class="topbar">
+    <div class="grow">
+      <div class="eyebrow">Au tour de</div>
+      <h2 id="turnName">—</h2>
+    </div>
+    <button class="iconbtn" id="repeat" aria-label="Répéter la dernière réponse">🔊</button>
+    <button class="iconbtn" id="menuBtn" aria-label="Menu">⋯</button>
+  </div>
+  <div class="chips" id="chips"></div>
+
+  <div class="seg" id="segMode">
+    <button data-v="ray" aria-pressed="true">Envoyer un rayon</button>
+    <button data-v="cell">Sonder une case</button>
+  </div>
+
+  <div class="boardbox"><svg class="board" id="board" viewBox="-1.2 -1.2 12.4 10.4"></svg></div>
+
+  <div class="ask">
+    <button class="btn primary" id="send" disabled>Choisissez un point d’entrée</button>
+  </div>
+
+  <div class="panel result" id="result">
+    <div class="swatch transparent" id="resSwatch"></div>
+    <div style="min-width:0">
+      <div class="big" id="resBig">Prêt</div>
+      <div class="sub" id="resSub">Touchez un numéro ou une lettre du bord.</div>
+    </div>
+  </div>
+
+  <button class="btn wide" id="proposeBtn">Proposer une solution</button>
+
+  <div class="panel">
+    <div class="row" style="justify-content:space-between"><h2>Journal</h2><span class="note" id="logCount"></span></div>
+    <ul class="log" id="log"></ul>
+  </div>
+</section>
+
+<!-- PROPOSE -->
+<section id="propose" class="wrap" hidden>
+  <div class="topbar">
+    <div class="grow">
+      <div class="eyebrow">Proposition secrète</div>
+      <h2 id="propName">—</h2>
+    </div>
+  </div>
+  <p class="note" style="margin:0">Les autres détournent les yeux. Choisissez une gemme, tournez-la, puis touchez la case où placer son coin haut-gauche.</p>
+  <div class="tray" id="tray"></div>
+  <div class="row">
+    <button class="btn" id="rotate" style="flex:1">↻ Tourner</button>
+    <button class="btn" id="removeP" style="flex:1">Retirer</button>
+  </div>
+  <div class="boardbox"><svg class="board" id="pboard" viewBox="-0.2 -0.2 10.4 8.4"></svg></div>
+  <div class="row">
+    <button class="btn ghost" id="cancelP" style="flex:1">Annuler</button>
+    <button class="btn primary" id="submitP" style="flex:2" disabled>Valider</button>
+  </div>
+</section>
+
+<!-- END -->
+<section id="end" class="wrap" hidden>
+  <div class="eyebrow">Fin de partie</div>
+  <h1 id="endTitle">—</h1>
+  <p id="endSub" class="muted" style="margin:0"></p>
+  <div class="boardbox"><svg class="board" id="eboard" viewBox="-1.2 -1.2 12.4 10.4"></svg></div>
+  <button class="btn primary wide" id="again">Nouvelle partie, mêmes joueurs</button>
+  <button class="btn wide" id="toSetup">Changer les réglages</button>
+  <div class="panel">
+    <h2>Journal</h2>
+    <ul class="log" id="elog"></ul>
+  </div>
+</section>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="panel" id="sheetBody"></div>
+</div>
+
+<script>
+// Orapa Mine engine: geometry, placement, ray tracing.
+// Board: 10 columns (x 0..10) by 8 rows (y 0..8), y grows downward.
+// Each cell is split into 4 quarter triangles by its diagonals: N=0, E=1, S=2, W=3.
+// Every gem has integer vertices and 0/45/90 degree edges, so it is exactly a union of quarters.
+var Orapa = (function () {
+  var W = 10, H = 8;
+  var DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
+  var ROWS = 'ABCDEFGH', BOTTOM = 'IJKLMNOPQR';
+
+  var TYPES = {
+    red:     { name: 'rouge',       code: 'R', poly: [[0,1],[1,0],[3,0],[2,1]] },
+    yellow:  { name: 'jaune',       code: 'Y', poly: [[0,0],[2,0],[0,2]] },
+    blue:    { name: 'bleue',       code: 'B', poly: [[0,0],[4,0],[2,2]] },
+    wbig:    { name: 'blanche',     code: 'W', poly: [[0,0],[4,0],[2,2]] },
+    wsmall:  { name: 'blanche',     code: 'W', poly: [[1,0],[2,1],[1,2],[0,1]] },
+    diamond: { name: 'diamant',     code: 'D', poly: [[0,0],[2,0],[1,1]] },
+    black:   { name: 'corps noir',  code: 'K', poly: [[0,0],[2,0],[2,1],[0,1]] }
+  };
+
+  var MIX = {
+    '': 'transparent', R: 'rouge', B: 'bleu', Y: 'jaune', W: 'blanc',
+    BR: 'violet', BW: 'bleu clair', BY: 'vert', RW: 'rose', RY: 'orange', WY: 'jaune clair',
+    BRW: 'violet clair', BRY: 'noir', BWY: 'vert clair', RWY: 'orange clair', BRWY: 'gris'
+  };
+
+  function normalize(pts) {
+    var mx = Infinity, my = Infinity;
+    pts.forEach(function (p) { mx = Math.min(mx, p[0]); my = Math.min(my, p[1]); });
+    return pts.map(function (p) { return [p[0] - mx, p[1] - my]; });
+  }
+  function key(pts) {
+    return pts.map(function (p) { return p[0] + ',' + p[1]; }).sort().join(';');
+  }
+  // All distinct orientations (rotations and mirrors) of a polygon.
+  var orientCache = {};
+  function orientations(type) {
+    if (orientCache[type]) return orientCache[type];
+    var base = TYPES[type].poly, seen = {}, out = [];
+    var tf = [
+      function (x, y) { return [x, y]; }, function (x, y) { return [-y, x]; },
+      function (x, y) { return [-x, -y]; }, function (x, y) { return [y, -x]; },
+      function (x, y) { return [-x, y]; }, function (x, y) { return [y, x]; },
+      function (x, y) { return [x, -y]; }, function (x, y) { return [-y, -x]; }
+    ];
+    tf.forEach(function (f) {
+      var p = normalize(base.map(function (v) { return f(v[0], v[1]); }));
+      var k = key(p);
+      if (!seen[k]) { seen[k] = 1; out.push(p); }
+    });
+    orientCache[type] = out;
+    return out;
+  }
+  function size(pts) {
+    var w = 0, h = 0;
+    pts.forEach(function (p) { w = Math.max(w, p[0]); h = Math.max(h, p[1]); });
+    return [w, h];
+  }
+  function inPoly(px, py, poly) {
+    var inside = false;
+    for (var i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      var xi = poly[i][0], yi = poly[i][1], xj = poly[j][0], yj = poly[j][1];
+      if (((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi)) inside = !inside;
+    }
+    return inside;
+  }
+  var QC = [[0.5, 1 / 6], [5 / 6, 0.5], [0.5, 5 / 6], [1 / 6, 0.5]];
+  // Quarters covered by an absolute polygon: array of "x,y,q" ints encoded as x*32+y*4+q
+  function quarters(abs) {
+    var s = size(abs), res = [];
+    for (var x = 0; x < W; x++) for (var y = 0; y < H; y++) for (var q = 0; q < 4; q++) {
+      if (inPoly(x + QC[q][0], y + QC[q][1], abs)) res.push(x * 32 + y * 4 + q);
+    }
+    return res;
+  }
+  function place(type, oi, ox, oy) {
+    var o = orientations(type)[oi];
+    var abs = o.map(function (p) { return [p[0] + ox, p[1] + oy]; });
+    return { type: type, o: oi, x: ox, y: oy, poly: abs, q: quarters(abs) };
+  }
+  function fits(type, oi, ox, oy) {
+    var s = size(orientations(type)[oi]);
+    return ox >= 0 && oy >= 0 && ox + s[0] <= W && oy + s[1] <= H;
+  }
+
+  function emptyOcc() { var a = new Int8Array(W * H * 4); a.fill(-1); return a; }
+  function idx(x, y, q) { return (x * H + y) * 4 + q; }
+  function buildOcc(pieces) {
+    var occ = emptyOcc();
+    pieces.forEach(function (p, i) {
+      p.q.forEach(function (c) { var x = c >> 5, y = (c >> 2) & 7, q = c & 3; occ[idx(x, y, q)] = i; });
+    });
+    return occ;
+  }
+  function getOcc(occ, x, y, q) {
+    if (x < 0 || y < 0 || x >= W || y >= H) return -1;
+    return occ[idx(x, y, q)];
+  }
+  // Can piece p (index i) join occupancy without overlapping or sharing an edge with another gem?
+  function compatible(occ, p, i) {
+    for (var k = 0; k < p.q.length; k++) {
+      var c = p.q[k], x = c >> 5, y = (c >> 2) & 7, q = c & 3;
+      var o = occ[idx(x, y, q)];
+      if (o !== -1 && o !== i) return false;
+      var nb = [[x, y, (q + 1) % 4], [x, y, (q + 3) % 4], [x + DX[q], y + DY[q], (q + 2) % 4]];
+      for (var n = 0; n < 3; n++) {
+        var v = getOcc(occ, nb[n][0], nb[n][1], nb[n][2]);
+        if (v !== -1 && v !== i) return false;
+      }
+    }
+    return true;
+  }
+
+  // Entry points
+  var ENTRIES = [];
+  for (var i = 0; i < W; i++) ENTRIES.push({ label: String(i + 1), x: i, y: 0, d: 2, side: 'top', pos: i });
+  for (var j = 0; j < H; j++) ENTRIES.push({ label: String(11 + j), x: W - 1, y: j, d: 3, side: 'right', pos: j });
+  for (i = 0; i < W; i++) ENTRIES.push({ label: BOTTOM[i], x: i, y: H - 1, d: 0, side: 'bottom', pos: i });
+  for (j = 0; j < H; j++) ENTRIES.push({ label: ROWS[j], x: 0, y: j, d: 1, side: 'left', pos: j });
+  var ENTRY_BY = {};
+  ENTRIES.forEach(function (e) { ENTRY_BY[e.label] = e; });
+
+  function exitLabel(x, y, d) {
+    if (d === 0) return String(x + 1);
+    if (d === 2) return BOTTOM[x];
+    if (d === 1) return String(11 + y);
+    return ROWS[y];
+  }
+
+  // Trace a ray. Returns {exit, colorName, absorbed, hits:[pieceIndex...], path:[[x,y]...]}
+  function trace(pieces, occ, label) {
+    var e = ENTRY_BY[label];
+    var x = e.x, y = e.y, d = e.d;
+    var hits = [], path = [];
+    var sx = e.side === 'left' ? 0 : e.side === 'right' ? W : x + 0.5;
+    var sy = e.side === 'top' ? 0 : e.side === 'bottom' ? H : y + 0.5;
+    path.push([sx, sy]);
+    var seen = {};
+    function hit(pi) {
+      hits.push(pi);
+      return pieces[pi].type === 'black';
+    }
+    function out(px, py, pd) {
+      path.push([px + 0.5 + DX[pd] * 0.5, py + 0.5 + DY[pd] * 0.5]);
+      return finish(exitLabel(px, py, pd), false);
+    }
+    function finish(exit, absorbed) {
+      var codes = {};
+      hits.forEach(function (pi) { var c = TYPES[pieces[pi].type].code; if ('RBYW'.indexOf(c) >= 0) codes[c] = 1; });
+      var k = Object.keys(codes).sort().join('');
+      return { entry: label, exit: exit, absorbed: absorbed, colorName: MIX[k], colorKey: k, hits: hits, path: path };
+    }
+    for (var step = 0; step < 1000; step++) {
+      var st = x + ',' + y + ',' + d;
+      if (seen[st]) return finish(null, true); // closed loop: treat as absorbed (should not happen)
+      seen[st] = 1;
+      var qin = (d + 2) % 4;
+      var o = occ[idx(x, y, qin)];
+      if (o !== -1) {
+        // Axis-aligned face on the boundary we are crossing: bounce straight back.
+        path.push([x + 0.5 + DX[qin] * 0.5, y + 0.5 + DY[qin] * 0.5]);
+        if (hit(o)) return finish(null, true);
+        d = qin;
+        var nx = x + DX[d], ny = y + DY[d];
+        if (nx < 0 || ny < 0 || nx >= W || ny >= H) { path.push([x + 0.5 + DX[d] * 0.5, y + 0.5 + DY[d] * 0.5]); return finish(exitLabel(x, y, d), false); }
+        x = nx; y = ny;
+        continue;
+      }
+      var ot = occ[idx(x, y, d)];
+      if (ot !== -1) {
+        // Diagonal face through the cell centre: turn 90 degrees toward the free side.
+        path.push([x + 0.5, y + 0.5]);
+        if (hit(ot)) return finish(null, true);
+        var l = (d + 3) % 4, r = (d + 1) % 4;
+        var lf = occ[idx(x, y, l)] === -1, rf = occ[idx(x, y, r)] === -1;
+        if (lf && !rf) d = l; else if (rf && !lf) d = r; else d = qin;
+      }
+      var nx2 = x + DX[d], ny2 = y + DY[d];
+      if (nx2 < 0 || ny2 < 0 || nx2 >= W || ny2 >= H) return out(x, y, d);
+      x = nx2; y = ny2;
+    }
+    return finish(null, true);
+  }
+
+  function cellLabel(x, y) { return ROWS[y] + (x + 1); }
+  function whatAt(pieces, occ, x, y) {
+    for (var q = 0; q < 4; q++) { var o = occ[idx(x, y, q)]; if (o !== -1) return pieces[o].type; }
+    return null;
+  }
+
+  // Every gem must be the first thing some ray hits (not fully hidden from the edges).
+  function allVisible(pieces, occ) {
+    var vis = pieces.map(function () { return false; });
+    ENTRIES.forEach(function (e) {
+      var r = trace(pieces, occ, e.label);
+      if (r.hits.length) vis[r.hits[0]] = true;
+    });
+    return vis.every(Boolean);
+  }
+
+  function shuffle(a, rnd) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(rnd() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+
+  function allPlacements(type) {
+    var res = [];
+    orientations(type).forEach(function (o, oi) {
+      var s = size(o);
+      for (var x = 0; x + s[0] <= W; x++) for (var y = 0; y + s[1] <= H; y++) res.push([oi, x, y]);
+    });
+    return res;
+  }
+
+  function generate(types, rnd) {
+    rnd = rnd || Math.random;
+    for (var attempt = 0; attempt < 500; attempt++) {
+      var pieces = [], occ = emptyOcc(), ok = true;
+      for (var t = 0; t < types.length; t++) {
+        var opts = shuffle(allPlacements(types[t]), rnd), placed = false;
+        for (var k = 0; k < opts.length; k++) {
+          var p = place(types[t], opts[k][0], opts[k][1], opts[k][2]);
+          if (compatible(occ, p, pieces.length)) {
+            p.q.forEach(function (c) { occ[idx(c >> 5, (c >> 2) & 7, c & 3)] = pieces.length; });
+            pieces.push(p); placed = true; break;
+          }
+        }
+        if (!placed) { ok = false; break; }
+      }
+      if (ok && allVisible(pieces, occ)) return pieces;
+    }
+    throw new Error('Impossible de générer une mine');
+  }
+
+  // Compare a proposal with the solution: same gem types on exactly the same quarters.
+  function sameLayout(sol, prop) {
+    if (sol.length !== prop.length) return false;
+    function sig(list) {
+      return list.map(function (p) { return TYPES[p.type].code + ':' + p.q.slice().sort(function (a, b) { return a - b; }).join(','); }).sort().join('|');
+    }
+    return sig(sol) === sig(prop);
+  }
+
+  return {
+    W: W, H: H, ROWS: ROWS, BOTTOM: BOTTOM, TYPES: TYPES, MIX: MIX, ENTRIES: ENTRIES,
+    orientations: orientations, size: size, place: place, fits: fits, buildOcc: buildOcc,
+    compatible: compatible, trace: trace, whatAt: whatAt, cellLabel: cellLabel,
+    generate: generate, sameLayout: sameLayout, allVisible: allVisible
+  };
+})();
+
+</script>
+<script>
+(function(){
+var O = Orapa, W = O.W, H = O.H;
+var $ = function(id){ return document.getElementById(id); };
+var SVGNS = 'http://www.w3.org/2000/svg';
+
+var GEM_FILL = { red:'#e0393e', yellow:'#f4b228', blue:'#2d6cc8', wbig:'#f2efe6', wsmall:'#f2efe6', diamond:'rgba(230,245,255,.35)', black:'#15161c' };
+var GEM_LINE = { red:'#9e1f24', yellow:'#c4790f', blue:'#1b4384', wbig:'#bdb7a7', wsmall:'#bdb7a7', diamond:'#ffffff', black:'#3a3d4c' };
+var GEM_LABEL = { red:'Rouge', yellow:'Jaune', blue:'Bleue', wbig:'Grande blanche', wsmall:'Petite blanche', diamond:'Diamant', black:'Corps noir' };
+var RAY_HEX = {
+  'transparent':'transparent','rouge':'#e0393e','bleu':'#2d6cc8','jaune':'#f4b228','blanc':'#f2efe6',
+  'violet':'#7b3fb8','bleu clair':'#8cc8f0','vert':'#36a457','rose':'#f29bb6','orange':'#f07a2a','jaune clair':'#f6e58d',
+  'violet clair':'#c3a3e6','noir':'#111216','vert clair':'#a8dc8c','orange clair':'#f8b98a','gris':'#9a9ca3'
+};
+var CELL_SPEECH = { red:'une gemme rouge', yellow:'une gemme jaune', blue:'une gemme bleue', wbig:'une gemme blanche', wsmall:'une gemme blanche', diamond:'un diamant' };
+
+/* ---------- storage ---------- */
+var KEY = 'orapa-mj-v1';
+function load(){ try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch(e){ return null; } }
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
+
+var S = load() || {};
+S.cfg = S.cfg || { names:['Joueur 1','Joueur 2','Joueur 3','Joueur 4','Joueur 5'], diamond:false, black:false, attempts:2, voice:true, turnVoice:true };
+var game = null, occ = null;
+
+function hydrate(){
+  if (!S.game) { game = null; return; }
+  game = S.game;
+  game.pieces = game.raw.map(function(r){ return O.place(r.type, r.o, r.x, r.y); });
+  occ = O.buildOcc(game.pieces);
+}
+function persistGame(){
+  if (game) S.game = { raw: game.pieces.map(function(p){ return {type:p.type,o:p.o,x:p.x,y:p.y}; }), players: game.players, turn: game.turn, log: game.log, status: game.status, winner: game.winner, last: game.last, cfg: game.cfg };
+  else S.game = null;
+  save();
+}
+
+/* ---------- voice ---------- */
+var frVoice = null;
+function pickVoice(){
+  if (!('speechSynthesis' in window)) return;
+  var vs = speechSynthesis.getVoices() || [];
+  var fr = vs.filter(function(v){ return /^fr/i.test(v.lang); });
+  frVoice = fr.find(function(v){ return /fr[-_]FR/i.test(v.lang) && v.localService; }) || fr.find(function(v){ return /fr[-_]FR/i.test(v.lang); }) || fr[0] || null;
+}
+if ('speechSynthesis' in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function speak(text, force){
+  if (!(force || S.cfg.voice) || !('speechSynthesis' in window)) return;
+  try {
+    speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang = 'fr-FR'; if (frVoice) u.voice = frVoice; u.rate = 0.95;
+    speechSynthesis.speak(u);
+  } catch(e){}
+}
+var wakeLock = null;
+function keepAwake(){
+  try { if (navigator.wakeLock && document.visibilityState === 'visible') navigator.wakeLock.request('screen').then(function(l){ wakeLock = l; }).catch(function(){}); } catch(e){}
+}
+document.addEventListener('visibilitychange', function(){ if (game && game.status === 'play') keepAwake(); });
+
+/* ---------- screens ---------- */
+function show(id){ ['setup','play','propose','end'].forEach(function(s){ $(s).hidden = (s !== id); }); window.scrollTo(0,0); }
+
+/* ---------- setup ---------- */
+function renderPlayers(){
+  var box = $('players'); box.innerHTML = '';
+  S.cfg.names.forEach(function(n, i){
+    var r = document.createElement('div'); r.className = 'prow';
+    var inp = document.createElement('input'); inp.id = 'pname' + i; inp.value = n; inp.maxLength = 16; inp.setAttribute('aria-label', 'Nom du joueur ' + (i+1));
+    inp.addEventListener('input', function(){ S.cfg.names[i] = inp.value; save(); });
+    var del = document.createElement('button'); del.className = 'iconbtn'; del.textContent = '×'; del.setAttribute('aria-label','Retirer ce joueur');
+    del.disabled = S.cfg.names.length <= 1;
+    del.onclick = function(){ S.cfg.names.splice(i,1); save(); renderPlayers(); };
+    r.appendChild(inp); r.appendChild(del); box.appendChild(r);
+  });
+  $('addP').disabled = S.cfg.names.length >= 8;
+  $('pcount').textContent = S.cfg.names.length + (S.cfg.names.length > 1 ? ' prospecteurs' : ' prospecteur (solo)');
+}
+function setSeg(seg, v){ Array.prototype.forEach.call($(seg).children, function(b){ b.setAttribute('aria-pressed', String(b.dataset.v === String(v))); }); }
+function initSetup(){
+  renderPlayers();
+  $('optDiamond').checked = S.cfg.diamond; $('optBlack').checked = S.cfg.black;
+  $('optVoice').checked = S.cfg.voice; $('optTurn').checked = S.cfg.turnVoice;
+  setSeg('segAttempts', S.cfg.attempts);
+  if (!('speechSynthesis' in window)) { $('voiceInfo').textContent = 'Ce navigateur ne propose pas de synthèse vocale.'; }
+  $('resume').hidden = !(game && game.status === 'play');
+}
+$('addP').onclick = function(){ S.cfg.names.push('Joueur ' + (S.cfg.names.length + 1)); save(); renderPlayers(); };
+$('optDiamond').onchange = function(e){ S.cfg.diamond = e.target.checked; save(); };
+$('optBlack').onchange = function(e){ S.cfg.black = e.target.checked; save(); };
+$('optVoice').onchange = function(e){ S.cfg.voice = e.target.checked; save(); };
+$('optTurn').onchange = function(e){ S.cfg.turnVoice = e.target.checked; save(); };
+$('segAttempts').onclick = function(e){ var v = e.target.dataset && e.target.dataset.v; if (!v) return; S.cfg.attempts = +v; setSeg('segAttempts', v); save(); };
+$('testVoice').onclick = function(){ speak('Rayon 7 : il ressort en 12, violet clair.', true); };
+$('start').onclick = function(){ newGame(); };
+$('resume').onclick = function(){ enterPlay(); };
+
+function newGame(){
+  var names = S.cfg.names.map(function(n, i){ return (n || '').trim() || ('Joueur ' + (i+1)); });
+  var types = ['red','yellow','blue','wbig','wsmall'];
+  if (S.cfg.diamond) types.push('diamond');
+  if (S.cfg.black) types.push('black');
+  var pieces = O.generate(types);
+  game = {
+    pieces: pieces,
+    players: names.map(function(n){ return { name:n, left:S.cfg.attempts, out:false }; }),
+    turn: 0, log: [], status: 'play', winner: null, last: null,
+    cfg: { attempts:S.cfg.attempts, types:types }
+  };
+  occ = O.buildOcc(pieces);
+  persistGame();
+  enterPlay();
+  speak('La mine est prête. ' + (names.length > 1 ? 'À ' + names[0] + ' de commencer.' : 'À vous de jouer.'));
+}
+
+/* ---------- board drawing ---------- */
+function el(tag, attrs, parent){
+  var e = document.createElementNS(SVGNS, tag);
+  for (var k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function drawGrid(svg){
+  el('rect', { x:0, y:0, width:W, height:H, fill:'var(--grid-bg)', rx:.05 }, svg);
+  for (var x = 0; x <= W; x++) el('line', { x1:x, y1:0, x2:x, y2:H, stroke:'var(--grid-line)', 'stroke-width':.035, opacity:.85 }, svg);
+  for (var y = 0; y <= H; y++) el('line', { x1:0, y1:y, x2:W, y2:y, stroke:'var(--grid-line)', 'stroke-width':.035, opacity:.85 }, svg);
+}
+var clipN = 0;
+function drawPiece(svg, p, opts){
+  opts = opts || {};
+  var g = el('g', { opacity: opts.opacity || 1 }, svg);
+  var pts = p.poly.map(function(v){ return v[0] + ',' + v[1]; }).join(' ');
+  var id = 'clip' + (clipN++);
+  var cp = el('clipPath', { id:id }, g); el('polygon', { points:pts }, cp);
+  el('polygon', { points:pts, fill:GEM_FILL[p.type], stroke: p.type === 'diamond' ? '#fff' : 'none', 'stroke-width':.05, 'stroke-dasharray': p.type === 'diamond' ? '.15 .1' : 'none' }, g);
+  var lines = el('g', { 'clip-path':'url(#' + id + ')', stroke:GEM_LINE[p.type], 'stroke-width':.04 }, g);
+  var xs = p.poly.map(function(v){return v[0];}), ys = p.poly.map(function(v){return v[1];});
+  var x0 = Math.min.apply(0,xs), x1 = Math.max.apply(0,xs), y0 = Math.min.apply(0,ys), y1 = Math.max.apply(0,ys);
+  for (var x = x0 + 1; x < x1; x++) el('line', { x1:x, y1:y0, x2:x, y2:y1 }, lines);
+  for (var y = y0 + 1; y < y1; y++) el('line', { x1:x0, y1:y, x2:x1, y2:y }, lines);
+  if (opts.selected) el('polygon', { points:pts, fill:'none', stroke:'var(--amber)', 'stroke-width':.12 }, g);
+  return g;
+}
+function labelPos(e){
+  if (e.side === 'top') return [e.pos + .5, -.6];
+  if (e.side === 'bottom') return [e.pos + .5, H + .6];
+  if (e.side === 'left') return [-.6, e.pos + .5];
+  return [W + .6, e.pos + .5];
+}
+function drawLabels(svg, opts){
+  O.ENTRIES.forEach(function(e){
+    var p = labelPos(e);
+    var g = el('g', { class:'lbl' + (opts.tap ? ' tap' : '') + (opts.sel === e.label ? ' sel' : ''), 'data-l':e.label }, svg);
+    el('rect', { x:p[0] - .46, y:p[1] - .46, width:.92, height:.92, rx:.2 }, g);
+    var mark = opts.marks && opts.marks[e.label];
+    if (mark) {
+      var fill = RAY_HEX[mark] === 'transparent' ? 'none' : RAY_HEX[mark];
+      el('circle', { cx:p[0], cy:p[1], r:.42, fill:fill, stroke:'var(--fg)', 'stroke-width':.06, 'stroke-dasharray': fill === 'none' ? '.12 .08' : 'none' }, g);
+    }
+    var t = el('text', { x:p[0], y:p[1] + .02 }, g); t.textContent = e.label;
+    if (mark && (mark === 'blanc' || mark === 'jaune' || mark === 'jaune clair' || mark === 'rose' || mark === 'bleu clair' || mark === 'vert clair' || mark === 'orange clair' || mark === 'violet clair' || mark === 'gris')) t.style.fill = '#1d2236';
+  });
+  // row / column guides for "sonder une case"
+}
+
+/* ---------- play ---------- */
+var mode = 'ray', sel = null;
+
+function enterPlay(){
+  keepAwake();
+  sel = null; renderPlay(); show('play');
+}
+function current(){ return game.players[game.turn]; }
+function renderChips(){
+  var box = $('chips'); box.innerHTML = '';
+  if (game.players.length === 1) { box.hidden = true; } else box.hidden = false;
+  game.players.forEach(function(p, i){
+    var c = document.createElement('div');
+    c.className = 'chip' + (i === game.turn ? ' turn' : '') + (p.out ? ' out' : '');
+    var pips = '<span class="pips" aria-label="' + p.left + ' proposition(s) restante(s)">';
+    for (var k = 0; k < game.cfg.attempts; k++) pips += '<span class="pip' + (k >= p.left ? ' used' : '') + '"></span>';
+    pips += '</span>';
+    c.innerHTML = '<span></span>' + pips;
+    c.firstChild.textContent = p.name;
+    box.appendChild(c);
+  });
+  $('turnName').textContent = current().name;
+}
+function renderBoard(){
+  var svg = $('board'); svg.innerHTML = '';
+  drawGrid(svg);
+  // cell hit areas (only in cell mode)
+  var marks = {};
+  if (game.last && game.last.kind === 'ray') {
+    marks[game.last.entry] = game.last.absorbed ? 'noir' : game.last.color;
+    if (game.last.exit) marks[game.last.exit] = game.last.color;
+  }
+  for (var x = 0; x < W; x++) for (var y = 0; y < H; y++) {
+    var r = el('rect', { x:x + .03, y:y + .03, width:.94, height:.94, class:'cellhit' + (mode === 'cell' ? ' tap' : '') + (mode === 'cell' && sel === O.cellLabel(x,y) ? ' sel' : ''), 'data-c':x + ',' + y }, svg);
+  }
+  if (game.last && game.last.kind === 'cell') {
+    var lx = game.last.x, ly = game.last.y;
+    el('rect', { x:lx + .08, y:ly + .08, width:.84, height:.84, fill:'none', stroke:'var(--amber)', 'stroke-width':.08, rx:.1 }, svg);
+  }
+  // row/col headers inside the label ring in cell mode
+  drawLabels(svg, { tap: mode === 'ray', sel: mode === 'ray' ? sel : null, marks: marks });
+  if (mode === 'cell') {
+    svg.querySelectorAll('.lbl text').forEach(function(t){ t.style.opacity = .55; });
+  }
+}
+function renderSend(){
+  var b = $('send');
+  if (game.status !== 'play') { b.disabled = true; return; }
+  if (!sel) { b.disabled = true; b.textContent = mode === 'ray' ? 'Choisissez un point d’entrée' : 'Choisissez une case'; }
+  else { b.disabled = false; b.textContent = mode === 'ray' ? 'Envoyer le rayon ' + sel : 'Sonder la case ' + sel; }
+}
+function setResult(r){
+  var sw = $('resSwatch');
+  sw.className = 'swatch'; sw.style.background = '';
+  if (!r) { sw.classList.add('transparent'); $('resBig').textContent = 'Prêt'; $('resSub').textContent = 'Touchez un numéro ou une lettre du bord.'; return; }
+  var col = r.absorbed ? 'noir' : r.color;
+  if (r.kind === 'ray') {
+    if (r.absorbed) { sw.style.background = '#000'; $('resBig').textContent = r.entry + ' → absorbé'; $('resSub').textContent = r.who + ' · le signal a été absorbé'; }
+    else {
+      if (r.color === 'transparent') sw.classList.add('transparent'); else sw.style.background = RAY_HEX[r.color];
+      $('resBig').textContent = r.entry + ' → ' + r.exit; $('resSub').textContent = r.who + ' · ' + r.color;
+    }
+  } else if (r.kind === 'cell') {
+    if (r.what === 'black') sw.style.background = '#000';
+    else if (!r.what) sw.classList.add('transparent');
+    else sw.style.background = GEM_FILL[r.what];
+    $('resBig').textContent = 'Case ' + r.cell; $('resSub').textContent = r.who + ' · ' + r.text;
+  } else {
+    sw.style.background = r.ok ? 'var(--ok)' : 'var(--danger)';
+    $('resBig').textContent = r.ok ? 'Bonne solution' : 'Proposition fausse'; $('resSub').textContent = r.who + ' · ' + r.text;
+  }
+  var box = $('result'); box.classList.remove('flash'); void box.offsetWidth; box.classList.add('flash');
+}
+function logItem(r){
+  var li = document.createElement('li');
+  var dot = document.createElement('span'); dot.className = 'dot';
+  var mid = document.createElement('div'); mid.style.minWidth = '0';
+  var q = document.createElement('span'); q.className = 'q';
+  if (r.kind === 'ray') {
+    if (r.absorbed) { dot.style.background = '#000'; q.textContent = r.entry + ' → ✕'; mid.textContent = 'absorbé'; }
+    else { if (r.color === 'transparent') dot.classList.add('transparent'); else dot.style.background = RAY_HEX[r.color]; q.textContent = r.entry + ' → ' + r.exit; mid.textContent = r.color; }
+  } else if (r.kind === 'cell') {
+    if (r.what === 'black') dot.style.background = '#000'; else if (!r.what) dot.classList.add('transparent'); else dot.style.background = GEM_FILL[r.what];
+    q.textContent = r.cell; mid.textContent = r.text;
+  } else {
+    dot.style.background = r.ok ? 'var(--ok)' : 'var(--danger)'; q.textContent = '✎'; mid.textContent = r.text;
+  }
+  var who = document.createElement('div'); who.className = 'who'; who.textContent = r.who;
+  mid.appendChild(who);
+  li.appendChild(dot); li.appendChild(mid); li.appendChild(q);
+  return li;
+}
+function renderLog(target){
+  var ul = $(target); ul.innerHTML = '';
+  if (!game.log.length) { var e = document.createElement('li'); e.className = 'empty'; e.style.display = 'block'; e.textContent = 'Aucune question pour l’instant.'; ul.appendChild(e); return; }
+  game.log.slice().reverse().forEach(function(r){ ul.appendChild(logItem(r)); });
+  if (target === 'log') $('logCount').textContent = game.log.filter(function(r){ return r.kind !== 'guess'; }).length + ' questions';
+}
+function renderPlay(){
+  renderChips(); renderBoard(); renderSend(); setResult(game.last); renderLog('log');
+  setSeg('segMode', mode);
+}
+
+$('segMode').onclick = function(e){ var v = e.target.dataset && e.target.dataset.v; if (!v) return; mode = v; sel = null; setSeg('segMode', v); renderBoard(); renderSend(); };
+$('board').addEventListener('click', function(e){
+  if (game.status !== 'play') return;
+  var t = e.target.closest('[data-l],[data-c]'); if (!t) return;
+  if (mode === 'ray' && t.dataset.l) { sel = (sel === t.dataset.l) ? null : t.dataset.l; }
+  else if (mode === 'cell' && t.dataset.c) { var c = t.dataset.c.split(','); var lab = O.cellLabel(+c[0], +c[1]); sel = (sel === lab) ? null : lab; }
+  else return;
+  renderBoard(); renderSend();
+});
+
+function phraseRay(r){
+  if (r.absorbed) return 'Rayon ' + spokenLabel(r.entry) + ' : le signal a été absorbé.';
+  var c = r.color === 'transparent' ? 'transparent' : r.color;
+  if (r.exit === r.entry) return 'Rayon ' + spokenLabel(r.entry) + ' : il revient en ' + spokenLabel(r.exit) + ', ' + c + '.';
+  return 'Rayon ' + spokenLabel(r.entry) + ' : il ressort en ' + spokenLabel(r.exit) + ', ' + c + '.';
+}
+function spokenLabel(l){ return l; }
+function nextTurn(){
+  var n = game.players.length;
+  for (var k = 1; k <= n; k++) { var j = (game.turn + k) % n; if (!game.players[j].out) { game.turn = j; return true; } }
+  return false;
+}
+function turnPhrase(){ return (S.cfg.turnVoice && game.players.length > 1 && game.status === 'play') ? ' À ' + current().name + '.' : ''; }
+
+$('send').onclick = function(){
+  if (!sel || game.status !== 'play') return;
+  var who = current().name, r;
+  if (mode === 'ray') {
+    var t = O.trace(game.pieces, occ, sel);
+    r = { kind:'ray', who:who, entry:sel, exit:t.exit, color:t.colorName, absorbed:t.absorbed };
+    r.say = phraseRay(r);
+  } else {
+    var row = O.ROWS.indexOf(sel[0]), col = +sel.slice(1) - 1;
+    var what = O.whatAt(game.pieces, occ, col, row);
+    var text = what === 'black' ? 'le signal a été absorbé' : (what ? CELL_SPEECH[what] : 'rien');
+    r = { kind:'cell', who:who, cell:sel, x:col, y:row, what:what, text:text };
+    r.say = 'Case ' + sel[0] + ' ' + (col + 1) + ' : ' + text + '.';
+  }
+  game.log.push(r); game.last = r; sel = null;
+  nextTurn();
+  persistGame(); renderPlay();
+  speak(r.say + turnPhrase());
+};
+$('repeat').onclick = function(){
+  if (!game.last) { speak('Aucune réponse pour l’instant.', true); return; }
+  speak(game.last.say, true);
+};
+
+/* ---------- menu ---------- */
+function openSheet(html, bind){ $('sheetBody').innerHTML = html; $('sheet').hidden = false; bind && bind(); }
+function closeSheet(){ $('sheet').hidden = true; }
+$('sheet').addEventListener('click', function(e){ if (e.target === $('sheet')) closeSheet(); });
+$('menuBtn').onclick = function(){
+  openSheet(
+    '<h2>Partie en cours</h2>' +
+    '<button class="btn wide" id="mSkip">Passer le tour de ' + escapeHtml(current().name) + '</button>' +
+    '<button class="btn wide" id="mReveal">Révéler la solution et terminer</button>' +
+    '<button class="btn wide" id="mNew">Nouvelle mine</button>' +
+    '<button class="btn ghost wide" id="mSetup">Réglages</button>' +
+    '<button class="btn ghost wide" id="mClose">Fermer</button>',
+    function(){
+      $('mClose').onclick = closeSheet;
+      $('mSkip').onclick = function(){ nextTurn(); persistGame(); renderPlay(); closeSheet(); speak(turnPhrase().trim() || 'Tour passé.'); };
+      $('mSetup').onclick = function(){ closeSheet(); initSetup(); show('setup'); };
+      $('mReveal').onclick = function(){ confirmSheet('Révéler la solution ? La partie sera terminée pour tout le monde.', 'Révéler', function(){ game.status = 'lost'; game.winner = null; persistGame(); showEnd('Solution révélée'); }); };
+      $('mNew').onclick = function(){ confirmSheet('Abandonner cette mine et en creuser une nouvelle ?', 'Nouvelle mine', function(){ newGame(); }); };
+    }
+  );
+};
+function confirmSheet(msg, okLabel, fn){
+  openSheet('<h2>Confirmer</h2><p style="margin:0">' + escapeHtml(msg) + '</p><div class="row"><button class="btn ghost" id="cNo" style="flex:1">Annuler</button><button class="btn primary" id="cYes" style="flex:1">' + escapeHtml(okLabel) + '</button></div>',
+    function(){ $('cNo').onclick = closeSheet; $('cYes').onclick = function(){ closeSheet(); fn(); }; });
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+/* ---------- propose ---------- */
+var P = null; // { placed: {type: piece}, orient: {type: oi}, selType }
+$('proposeBtn').onclick = function(){
+  if (game.status !== 'play') return;
+  confirmSheet(current().name + ' utilise son tour pour proposer une solution. Il reste ' + current().left + ' proposition(s).', 'Proposer', function(){
+    P = { placed:{}, orient:{}, selType:game.cfg.types[0] };
+    game.cfg.types.forEach(function(t){ P.orient[t] = 0; });
+    $('propName').textContent = current().name;
+    renderPropose(); show('propose');
+  });
+};
+function renderTray(){
+  var tray = $('tray'); tray.innerHTML = '';
+  game.cfg.types.forEach(function(t){
+    var b = document.createElement('button');
+    b.setAttribute('aria-pressed', String(P.selType === t));
+    if (P.placed[t]) b.classList.add('placed');
+    var o = O.orientations(t)[P.orient[t]], s = O.size(o);
+    var svg = el('svg', { viewBox: '-0.2 -0.2 ' + (s[0] + .4) + ' ' + (s[1] + .4) });
+    drawPiece(svg, { type:t, poly:o });
+    b.appendChild(svg);
+    var lab = document.createElement('span'); lab.textContent = GEM_LABEL[t]; b.appendChild(lab);
+    var st = document.createElement('span'); st.className = 'st'; st.textContent = P.placed[t] ? 'placée' : 'à placer'; b.appendChild(st);
+    b.onclick = function(){ P.selType = (P.selType === t) ? null : t; renderPropose(); };
+    tray.appendChild(b);
+  });
+}
+function renderPBoard(){
+  var svg = $('pboard'); svg.innerHTML = '';
+  drawGrid(svg);
+  for (var x = 0; x < W; x++) for (var y = 0; y < H; y++) el('rect', { x:x, y:y, width:1, height:1, class:'cellhit tap', 'data-c':x + ',' + y }, svg);
+  game.cfg.types.forEach(function(t){
+    if (!P.placed[t]) return;
+    var g = drawPiece(svg, P.placed[t], { selected: P.selType === t, opacity: .92 });
+    g.style.pointerEvents = 'none';
+  });
+  // conflicts hint
+  var list = game.cfg.types.filter(function(t){ return P.placed[t]; }).map(function(t){ return P.placed[t]; });
+  var occ2 = O.buildOcc(list), bad = list.some(function(p, i){ return !O.compatible(occ2, p, i); });
+  $('submitP').disabled = game.cfg.types.some(function(t){ return !P.placed[t]; });
+  $('submitP').textContent = bad ? 'Valider (gemmes qui se touchent)' : 'Valider';
+}
+function renderPropose(){ renderTray(); renderPBoard(); $('rotate').disabled = !P.selType; $('removeP').disabled = !(P.selType && P.placed[P.selType]); }
+function placeSel(x, y){
+  var t = P.selType; if (!t) return;
+  var o = O.orientations(t)[P.orient[t]], s = O.size(o);
+  var ox = Math.max(0, Math.min(x, W - s[0])), oy = Math.max(0, Math.min(y, H - s[1]));
+  P.placed[t] = O.place(t, P.orient[t], ox, oy);
+}
+$('pboard').addEventListener('click', function(e){
+  var c = e.target.closest('[data-c]'); if (!c) return;
+  var xy = c.dataset.c.split(',').map(Number);
+  if (!P.selType) {
+    // pick up a placed gem by tapping it
+    var hitT = game.cfg.types.find(function(t){ var p = P.placed[t]; return p && p.q.some(function(q){ return (q >> 5) === xy[0] && ((q >> 2) & 7) === xy[1]; }); });
+    if (hitT) { P.selType = hitT; renderPropose(); }
+    return;
+  }
+  placeSel(xy[0], xy[1]);
+  // move on to the next unplaced gem
+  var next = game.cfg.types.find(function(t){ return !P.placed[t]; });
+  P.selType = next || P.selType;
+  renderPropose();
+});
+$('rotate').onclick = function(){
+  var t = P.selType; if (!t) return;
+  P.orient[t] = (P.orient[t] + 1) % O.orientations(t).length;
+  if (P.placed[t]) placeSel(P.placed[t].x, P.placed[t].y);
+  renderPropose();
+};
+$('removeP').onclick = function(){ if (P.selType) { delete P.placed[P.selType]; renderPropose(); } };
+$('cancelP').onclick = function(){ P = null; show('play'); renderPlay(); };
+$('submitP').onclick = function(){
+  var who = current();
+  var prop = game.cfg.types.map(function(t){ return P.placed[t]; });
+  var ok = O.sameLayout(game.pieces, prop);
+  var r;
+  if (ok) {
+    r = { kind:'guess', who:who.name, ok:true, text:'proposition correcte' };
+    r.say = 'Bravo ' + who.name + ', c’est la bonne solution !';
+    game.log.push(r); game.last = r; game.status = 'won'; game.winner = who.name;
+    persistGame(); P = null; showEnd(who.name + ' a trouvé !'); speak(r.say);
+    return;
+  }
+  who.left -= 1;
+  var msg;
+  if (who.left <= 0) { who.out = true; msg = who.name + ' est éliminé.'; }
+  else msg = 'Il reste ' + who.left + ' proposition' + (who.left > 1 ? 's' : '') + ' à ' + who.name + '.';
+  r = { kind:'guess', who:who.name, ok:false, text:'proposition incorrecte' + (who.out ? ' · éliminé' : ' · ' + who.left + ' restante' + (who.left > 1 ? 's' : '')) };
+  r.say = 'Proposition incorrecte. ' + msg;
+  game.log.push(r); game.last = r; P = null;
+  if (!nextTurn() || game.players.every(function(p){ return p.out; })) {
+    game.status = 'lost'; persistGame(); showEnd('La mine a gagné'); speak(r.say + ' Tout le monde s’est trompé, la mine a gagné.');
+    return;
+  }
+  persistGame(); show('play'); renderPlay(); speak(r.say + turnPhrase());
+};
+
+/* ---------- end ---------- */
+function showEnd(title){
+  $('endTitle').textContent = title;
+  var q = game.log.filter(function(r){ return r.kind !== 'guess'; }).length;
+  $('endSub').textContent = (game.status === 'won' ? 'Trouvé en ' : 'Partie terminée après ') + q + ' question' + (q > 1 ? 's' : '') + '. Voici la mine.';
+  var svg = $('eboard'); svg.innerHTML = '';
+  drawGrid(svg);
+  game.pieces.forEach(function(p){ drawPiece(svg, p); });
+  drawLabels(svg, {});
+  renderLog('elog');
+  show('end');
+}
+$('again').onclick = function(){ newGame(); };
+$('toSetup').onclick = function(){ initSetup(); show('setup'); };
+
+/* ---------- boot ---------- */
+hydrate();
+initSetup();
+if (game && game.status === 'play') enterPlay();
+else if (game && game.status !== 'play') { showEnd(game.status === 'won' ? game.winner + ' a trouvé !' : 'La mine a gagné'); }
+else show('setup');
+})();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) { window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
+</script>
+</body>
+</html>

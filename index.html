@@ -123,6 +123,18 @@ svg.board{display:block;width:100%;height:auto;touch-action:manipulation;user-se
 .sheet{position:fixed;inset:0;background:rgba(8,12,24,.7);display:flex;align-items:flex-end;justify-content:center;z-index:20;padding-bottom:env(safe-area-inset-bottom,0px)}
 .sheet .panel{width:100%;max-width:560px;border-radius:18px 18px 0 0;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:18px 22px}
 .note{font-size:13px;color:var(--muted)}
+.notice{border:1px solid var(--amber);background:rgba(244,178,40,.1);border-radius:12px;padding:12px 14px;font-size:15px;display:flex;flex-direction:column;gap:4px}
+.notice strong{color:var(--amber)}
+.sheet .panel{max-height:88vh;overflow-y:auto}
+.help h3{font-family:var(--f-display);font-weight:400;font-size:15px;margin:6px 0 0;color:var(--amber);letter-spacing:.02em}
+.help p,.help ol,.help ul{margin:0;font-size:15px}
+.help ol,.help ul{padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.help .cols{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;list-style:none;padding:0}
+.help .cols li{display:flex;gap:8px;align-items:center;font-size:14px}
+.help .cols i{width:14px;height:14px;border-radius:4px;flex:none;border:1px solid rgba(255,255,255,.3)}
+.help .cols b{font-weight:700}
+.foot{font-size:13px;color:var(--muted);text-align:center;margin:0}
+.foot a{color:var(--muted)}
 @media (prefers-reduced-motion:no-preference){
   .result.flash .swatch{animation:pop .35s ease-out}
   @keyframes pop{from{transform:scale(.6)}to{transform:scale(1)}}
@@ -148,6 +160,11 @@ svg.board{display:block;width:100%;height:auto;touch-action:manipulation;user-se
     </div>
   </div>
   <p class="muted" style="margin:0">L’app cache les gemmes et répond aux rayons. Posez le téléphone au milieu de la table, chacun garde sa feuille de solutions.</p>
+  <div class="notice" role="note">
+    <strong>Il faut posséder le jeu</strong>
+    <span>Cette page remplace seulement le maître du jeu. Pour jouer, il vous faut la boîte d’Orapa Mine : les feuilles de solutions, les pièces de gemmes pour tester vos idées et le livret de règles.</span>
+  </div>
+  <button class="btn small" id="helpSetup" style="align-self:flex-start">? Mode d’emploi</button>
 
   <div class="panel">
     <h2>Prospecteurs</h2>
@@ -179,6 +196,7 @@ svg.board{display:block;width:100%;height:auto;touch-action:manipulation;user-se
 
   <button class="btn primary wide" id="start">Creuser la mine</button>
   <button class="btn ghost wide" id="resume" hidden>Reprendre la partie en cours</button>
+  <p class="foot">Orapa Mine est un jeu de Junghee Choi et Wanjin Gill, édité par Playte (Gigamic en France). Application amateur non officielle, sans lien avec les éditeurs. <a href="https://github.com/benoitprat/orapa-mine">Code source</a></p>
 </section>
 
 <!-- PLAY -->
@@ -254,6 +272,63 @@ svg.board{display:block;width:100%;height:auto;touch-action:manipulation;user-se
     <ul class="log" id="elog"></ul>
   </div>
 </section>
+
+<template id="helpTpl">
+  <div class="help">
+    <h2>Mode d’emploi</h2>
+    <h3>Ce qu’il vous faut</h3>
+    <p>La boîte d’Orapa Mine. Chaque prospecteur prend une feuille de solutions et un crayon. Gardez les pièces de gemmes à portée de main pour tester vos hypothèses. Le téléphone remplace le maître du jeu et son plateau caché derrière l’écran.</p>
+    <h3>Préparer la partie</h3>
+    <ol>
+      <li>Entrez le nom des prospecteurs, dans l’ordre où ils jouent (de 1 à 8).</li>
+      <li>Ajoutez le diamant ou le corps noir si vous jouez avec ces extensions.</li>
+      <li>Choisissez le nombre de propositions par joueur (2 dans les règles).</li>
+      <li>Touchez « Creuser la mine ». L’app place 5 gemmes au hasard (rouge, jaune, bleue, deux blanches), selon les règles de placement du livret.</li>
+    </ol>
+    <h3>À votre tour : une question</h3>
+    <ul>
+      <li><b>Envoyer un rayon</b> : touchez un numéro (1 à 18) ou une lettre (A à R) sur le bord, puis le bouton. L’app annonce le point de sortie et la couleur du rayon. « Absorbé » signifie qu’il a touché le corps noir.</li>
+      <li><b>Sonder une case</b> : touchez une case de la grille. L’app dit quelle couleur de gemme s’y trouve, sans sa forme ni son orientation.</li>
+    </ul>
+    <p>La réponse s’affiche pour toute la table, s’ajoute au journal, et le tour passe au joueur suivant. Notez-la sur votre feuille.</p>
+    <h3>Couleurs du rayon</h3>
+    <ul class="cols">
+      <li><i style="background:transparent;border-style:dashed"></i>Transparent : rien</li>
+      <li><i style="background:#7b3fb8"></i>Violet : bleu + rouge</li>
+      <li><i style="background:#8cc8f0"></i>Bleu clair : bleu + blanc</li>
+      <li><i style="background:#36a457"></i>Vert : bleu + jaune</li>
+      <li><i style="background:#f29bb6"></i>Rose : rouge + blanc</li>
+      <li><i style="background:#f07a2a"></i>Orange : rouge + jaune</li>
+      <li><i style="background:#f6e58d"></i>Jaune clair : blanc + jaune</li>
+      <li><i style="background:#c3a3e6"></i>Violet clair : bleu, rouge, blanc</li>
+      <li><i style="background:#111216"></i>Noir : bleu, rouge, jaune</li>
+      <li><i style="background:#a8dc8c"></i>Vert clair : bleu, blanc, jaune</li>
+      <li><i style="background:#f8b98a"></i>Orange clair : rouge, blanc, jaune</li>
+      <li><i style="background:#9a9ca3"></i>Gris : les quatre</li>
+    </ul>
+    <p class="note">Toucher deux fois la même couleur ne change rien. Le diamant renvoie le rayon sans le colorer.</p>
+    <h3>À votre tour : proposer une solution</h3>
+    <ol>
+      <li>Touchez « Proposer une solution » à la place d’une question. Les autres détournent les yeux.</li>
+      <li>Choisissez une gemme, tournez-la avec ↻, puis touchez la case où doit aller le coin haut-gauche de la pièce. Retouchez une gemme posée pour la déplacer.</li>
+      <li>Une fois toutes les gemmes posées, touchez « Valider ».</li>
+    </ol>
+    <p>Si c’est juste, vous gagnez et la mine s’affiche. Sinon, vous perdez une proposition. Sans proposition restante, vous êtes éliminé. Si tout le monde est éliminé, la mine gagne.</p>
+    <h3>Boutons utiles</h3>
+    <ul>
+      <li><b>🔊</b> répète la dernière réponse.</li>
+      <li><b>⋯</b> permet de passer un tour, de révéler la solution ou de creuser une nouvelle mine.</li>
+    </ul>
+    <h3>Bon à savoir</h3>
+    <ul>
+      <li>Touchez l’écran une première fois pour que le téléphone accepte de parler. Sur iPhone, coupez le mode silencieux.</li>
+      <li>La partie est sauvegardée sur ce téléphone : vous pouvez fermer l’app et reprendre plus tard.</li>
+      <li>Une fois ouverte, l’app fonctionne sans connexion. Ajoutez-la à l’écran d’accueil depuis le menu du navigateur.</li>
+      <li>Jouer seul fonctionne aussi : entrez un seul nom.</li>
+    </ul>
+    <button class="btn primary wide" id="helpClose">Compris</button>
+  </div>
+</template>
 
 <div class="sheet" id="sheet" hidden>
   <div class="panel" id="sheetBody"></div>
@@ -835,12 +910,14 @@ $('menuBtn').onclick = function(){
     '<button class="btn wide" id="mSkip">Passer le tour de ' + escapeHtml(current().name) + '</button>' +
     '<button class="btn wide" id="mReveal">Révéler la solution et terminer</button>' +
     '<button class="btn wide" id="mNew">Nouvelle mine</button>' +
+    '<button class="btn wide" id="mHelp">Mode d’emploi</button>' +
     '<button class="btn ghost wide" id="mSetup">Réglages</button>' +
     '<button class="btn ghost wide" id="mClose">Fermer</button>',
     function(){
       $('mClose').onclick = closeSheet;
       $('mSkip').onclick = function(){ nextTurn(); persistGame(); renderPlay(); closeSheet(); speak(turnPhrase().trim() || 'Tour passé.'); };
       $('mSetup').onclick = function(){ closeSheet(); initSetup(); show('setup'); };
+      $('mHelp').onclick = openHelp;
       $('mReveal').onclick = function(){ confirmSheet('Révéler la solution ? La partie sera terminée pour tout le monde.', 'Révéler', function(){ game.status = 'lost'; game.winner = null; persistGame(); showEnd('Solution révélée'); }); };
       $('mNew').onclick = function(){ confirmSheet('Abandonner cette mine et en creuser une nouvelle ?', 'Nouvelle mine', function(){ newGame(); }); };
     }
@@ -850,6 +927,8 @@ function confirmSheet(msg, okLabel, fn){
   openSheet('<h2>Confirmer</h2><p style="margin:0">' + escapeHtml(msg) + '</p><div class="row"><button class="btn ghost" id="cNo" style="flex:1">Annuler</button><button class="btn primary" id="cYes" style="flex:1">' + escapeHtml(okLabel) + '</button></div>',
     function(){ $('cNo').onclick = closeSheet; $('cYes').onclick = function(){ closeSheet(); fn(); }; });
 }
+function openHelp(){ openSheet($('helpTpl').innerHTML, function(){ $('helpClose').onclick = closeSheet; $('sheetBody').scrollTop = 0; }); }
+$('helpSetup').onclick = openHelp;
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
 /* ---------- propose ---------- */

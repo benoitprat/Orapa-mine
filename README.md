@@ -104,6 +104,8 @@ Les deux gemmes blanches sont interchangeables pour la vérification. Seules com
 
 Toucher plusieurs fois la même couleur ne change pas le résultat. Le diamant renvoie le rayon sans changer sa couleur.
 
+**Noir ≠ absorbé.** Un rayon *noir* ressort bien de la mine, après avoir touché du bleu, du rouge et du jaune : l’app l’affiche en pastille noire pleine, avec un point de sortie. Un rayon *absorbé* a heurté le corps noir et ne ressort pas : l’app annonce « le signal a été absorbé » et l’affiche en pastille hachurée de rouge, sans point de sortie. Une case du corps noir sondée s’affiche de la même façon.
+
 ## Voix
 
 - L’app utilise la synthèse vocale française du téléphone, sans connexion ni compte.

@@ -105,6 +105,9 @@ svg.board{display:block;width:100%;height:auto;touch-action:manipulation;user-se
 .log li:first-child{border-top:0}
 .log .dot{width:16px;height:16px;border-radius:5px;border:1px solid rgba(255,255,255,.3)}
 .log .dot.transparent{background:transparent;border-style:dashed}
+/* Absorbed (black body) = red hatching, never solid black: black is the blue+red+yellow ray colour */
+.swatch.absorbed,.log .dot.absorbed{background:repeating-linear-gradient(45deg,var(--danger) 0 2px,transparent 2px 6px);border:2px solid var(--danger)}
+.log .dot.absorbed{border-width:1px}
 .log .who{color:var(--muted);font-size:13px}
 .log .q{font-family:var(--f-display);font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .empty{color:var(--muted);font-size:15px;padding:4px 2px}
@@ -330,6 +333,7 @@ svg.board{display:block;width:100%;height:auto;touch-action:manipulation;user-se
       <li><i style="background:#9a9ca3"></i>Gris : les quatre</li>
     </ul>
     <p class="note">Toucher deux fois la même couleur ne change rien. Le diamant renvoie le rayon sans le colorer.</p>
+    <p class="note"><b>Noir</b> et <b>absorbé</b> sont différents. Un rayon noir ressort après avoir touché du bleu, du rouge et du jaune (pastille noire pleine). Un rayon absorbé a heurté le corps noir et ne ressort pas (pastille hachurée de rouge, sans point de sortie).</p>
     <h3>À votre tour : proposer une solution</h3>
     <ol>
       <li>Touchez « Proposer une solution » à la place d’une question. Les autres détournent les yeux.</li>
@@ -530,7 +534,12 @@ function drawLabels(svg, opts){
     var g = el('g', { class:'lbl' + (opts.tap ? ' tap' : '') + (opts.sel === e.label ? ' sel' : ''), 'data-l':e.label }, svg);
     el('rect', { x:p[0] - .46, y:p[1] - .46, width:.92, height:.92, rx:.2 }, g);
     var mark = opts.marks && opts.marks[e.label];
-    if (mark) {
+    if (mark === 'absorbed') {
+      var pid = 'hatch' + (clipN++);
+      var pat = el('pattern', { id:pid, width:.18, height:.18, patternUnits:'userSpaceOnUse', patternTransform:'rotate(45)' }, g);
+      el('rect', { x:0, y:0, width:.07, height:.18, fill:'var(--danger)' }, pat);
+      el('circle', { cx:p[0], cy:p[1], r:.42, fill:'url(#' + pid + ')', stroke:'var(--danger)', 'stroke-width':.07 }, g);
+    } else if (mark) {
       var fill = RAY_HEX[mark] === 'transparent' ? 'none' : RAY_HEX[mark];
       el('circle', { cx:p[0], cy:p[1], r:.42, fill:fill, stroke:'var(--fg)', 'stroke-width':.06, 'stroke-dasharray': fill === 'none' ? '.12 .08' : 'none' }, g);
     }
@@ -570,7 +579,7 @@ function renderBoard(){
   // cell hit areas (only in cell mode)
   var marks = {};
   if (game.last && game.last.kind === 'ray') {
-    marks[game.last.entry] = game.last.absorbed ? 'noir' : game.last.color;
+    marks[game.last.entry] = game.last.absorbed ? 'absorbed' : game.last.color;
     if (game.last.exit) marks[game.last.exit] = game.last.color;
   }
   for (var x = 0; x < W; x++) for (var y = 0; y < H; y++) {
@@ -598,13 +607,13 @@ function setResult(r){
   if (!r) { sw.classList.add('transparent'); $('resBig').textContent = 'Prêt'; $('resSub').textContent = 'Touchez un numéro ou une lettre du bord.'; return; }
   var col = r.absorbed ? 'noir' : r.color;
   if (r.kind === 'ray') {
-    if (r.absorbed) { sw.style.background = '#000'; $('resBig').textContent = r.entry + ' → absorbé'; $('resSub').textContent = r.who + ' · le signal a été absorbé'; }
+    if (r.absorbed) { sw.classList.add('absorbed'); $('resBig').textContent = r.entry + ' → absorbé'; $('resSub').textContent = r.who + ' · le signal a été absorbé'; }
     else {
       if (r.color === 'transparent') sw.classList.add('transparent'); else sw.style.background = RAY_HEX[r.color];
       $('resBig').textContent = r.entry + ' → ' + r.exit; $('resSub').textContent = r.who + ' · ' + r.color;
     }
   } else if (r.kind === 'cell') {
-    if (r.what === 'black') sw.style.background = '#000';
+    if (r.what === 'black') sw.classList.add('absorbed');
     else if (!r.what) sw.classList.add('transparent');
     else sw.style.background = GEM_FILL[r.what];
     $('resBig').textContent = 'Case ' + r.cell; $('resSub').textContent = r.who + ' · ' + r.text;
@@ -620,10 +629,10 @@ function logItem(r){
   var mid = document.createElement('div'); mid.style.minWidth = '0';
   var q = document.createElement('span'); q.className = 'q';
   if (r.kind === 'ray') {
-    if (r.absorbed) { dot.style.background = '#000'; q.textContent = r.entry + ' → ✕'; mid.textContent = 'absorbé'; }
+    if (r.absorbed) { dot.classList.add('absorbed'); q.textContent = r.entry + ' → ✕'; mid.textContent = 'absorbé'; }
     else { if (r.color === 'transparent') dot.classList.add('transparent'); else dot.style.background = RAY_HEX[r.color]; q.textContent = r.entry + ' → ' + r.exit; mid.textContent = r.color; }
   } else if (r.kind === 'cell') {
-    if (r.what === 'black') dot.style.background = '#000'; else if (!r.what) dot.classList.add('transparent'); else dot.style.background = GEM_FILL[r.what];
+    if (r.what === 'black') dot.classList.add('absorbed'); else if (!r.what) dot.classList.add('transparent'); else dot.style.background = GEM_FILL[r.what];
     q.textContent = r.cell; mid.textContent = r.text;
   } else {
     dot.style.background = r.ok ? 'var(--ok)' : 'var(--danger)'; q.textContent = '✎'; mid.textContent = r.text;

@@ -39,10 +39,21 @@ Dans l’app :
 | Réglage | Rôle |
 |---|---|
 | **Prospecteurs** | Noms des joueurs, dans l’ordre du tour (de 1 à 8). Avec un seul nom, vous jouez seul contre la mine. |
+| **Difficulté** | Facile, Normal ou Expert (voir ci-dessous). |
 | **Extension Diamant** | Ajoute la gemme transparente : elle renvoie le rayon sans le colorer. |
 | **Extension Corps noir** | Ajoute le corps noir : il absorbe le rayon (« le signal a été absorbé »). |
-| **Propositions par joueur** | 2 dans les règles, de 1 à 3 au choix. |
+| **Propositions par joueur** | De 1 à 3. Le choix de la difficulté règle une valeur par défaut, que vous pouvez modifier. |
 | **Voix** | Annonce les réponses, et éventuellement le joueur suivant. |
+
+### Niveaux de difficulté
+
+| Niveau | Mine | Règles |
+|---|---|---|
+| **Facile** | Gemmes bien espacées : elles ne se touchent pas, même par un coin. L’app choisit une mine où peu de rayons touchent plusieurs gemmes. | 3 propositions. Pendant une proposition, un encadré liste les réponses du journal que votre mine n’explique pas encore. |
+| **Normal** | Placement au hasard selon les règles du livret. | 2 propositions, comme dans le livret. |
+| **Expert** | Gemmes imbriquées : l’app choisit, parmi 40 mines tirées au hasard, celle qui a le plus de contacts entre gemmes et de rayons aux couleurs mélangées. | 2 propositions. On ne peut pas sonder une case, seulement envoyer des rayons. |
+
+L’aide du niveau Facile n’utilise que les réponses publiques du journal. Elle fait le calcul que chaque joueur pourrait faire sur sa feuille.
 
 Touchez **Creuser la mine**. L’app place au hasard les 5 gemmes de base (rouge, jaune, bleue, grande blanche, petite blanche), plus les extensions choisies, en respectant les règles du livret :
 
@@ -55,7 +66,7 @@ Touchez **Creuser la mine**. L’app place au hasard les 5 gemmes de base (rouge
 À son tour, un joueur fait **une** action :
 
 - **Envoyer un rayon** : touchez un repère du bord (1 à 10 en haut, 11 à 18 à droite, I à R en bas, A à H à gauche), puis le bouton d’envoi. L’app annonce le **point de sortie** et la **couleur** du rayon. Le repère d’entrée et celui de sortie se colorent sur la grille.
-- **Sonder une case** : passez en mode « Sonder une case », touchez une case (par exemple C4), puis le bouton. L’app dit quelle couleur de gemme s’y trouve, ou « rien ». Elle ne donne ni la forme ni l’orientation. Une case du corps noir répond « le signal a été absorbé ».
+- **Sonder une case** (sauf en Expert) : passez en mode « Sonder une case », touchez une case (par exemple C4), puis le bouton. L’app dit quelle couleur de gemme s’y trouve, ou « rien ». Elle ne donne ni la forme ni l’orientation. Une case du corps noir répond « le signal a été absorbé ».
 - **Proposer une solution** (voir plus bas).
 
 Chaque réponse reste affichée en grand, s’ajoute au **journal** (de la plus récente à la plus ancienne), puis le tour passe au joueur suivant encore en jeu.
@@ -63,9 +74,10 @@ Chaque réponse reste affichée en grand, s’ajoute au **journal** (de la plus 
 ## Proposer une solution
 
 1. Touchez **Proposer une solution** et confirmez. Les autres joueurs détournent les yeux.
-2. Choisissez une gemme dans la réserve, tournez-la avec **↻ Tourner**, puis touchez la case où doit aller le **coin haut-gauche** de la pièce (le coin du rectangle qui l’entoure). La gemme suivante est sélectionnée automatiquement.
-3. Pour déplacer une gemme posée, touchez-la sur la grille ou dans la réserve, puis touchez sa nouvelle case. **Retirer** l’enlève du plateau.
-4. Quand toutes les gemmes sont posées, touchez **Valider**. Si deux gemmes se touchent par un côté, le bouton le signale, mais vous pouvez quand même valider.
+2. **Poser une gemme** : faites-la glisser de la réserve vers la grille. Sur téléphone, elle s’affiche un peu au-dessus du doigt pour rester visible. Vous pouvez aussi toucher la gemme dans la réserve, puis toucher une case : la gemme se centre sur cette case.
+3. **Ajuster** : touchez une gemme posée pour la sélectionner (contour orange). **↻ Tourner** la fait pivoter d’un quart de tour, **⇋ Retourner** la retourne comme un miroir. Elle garde sa place sur la grille. Faites-la glisser pour la déplacer. **Retirer** la remet dans la réserve.
+4. La grille porte les mêmes repères que la feuille de solutions (1 à 18, A à R), pour recopier facilement votre feuille.
+5. Les gemmes qui se chevauchent ou se touchent par un côté sont entourées de rouge pointillé. **Valider** s’active quand toutes les gemmes sont posées sans conflit.
 
 - **Juste** : le joueur gagne, la mine s’affiche avec le nombre de questions posées.
 - **Faux** : le joueur perd une proposition. Sans proposition restante, il est éliminé. Si tous les joueurs sont éliminés, la mine gagne.
@@ -115,7 +127,7 @@ Toucher plusieurs fois la même couleur ne change pas le résultat. Le diamant r
   - **jaune** : triangle rectangle de 2 cases de côté ;
   - **bleue** et **grande blanche** : triangle de base 4 et de hauteur 2 ;
   - **petite blanche** : losange de 2 × 2 ;
-  - **diamant** : triangle de base 2 et de hauteur 1 (taille supposée, le livret ne la donne pas) ;
+  - **diamant** : triangle rectangle isocèle de 1 carreau de côté (une demi-case) ;
   - **corps noir** : base rectangulaire de 2 × 1.
 
   Si une forme ne correspond pas à vos pièces, ouvrez une *issue* sur le dépôt.

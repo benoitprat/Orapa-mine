@@ -13,7 +13,7 @@ var Orapa = (function () {
     blue:    { name: 'bleue',       code: 'B', poly: [[0,0],[4,0],[2,2]] },
     wbig:    { name: 'blanche',     code: 'W', poly: [[0,0],[4,0],[2,2]] },
     wsmall:  { name: 'blanche',     code: 'W', poly: [[1,0],[2,1],[1,2],[0,1]] },
-    diamond: { name: 'diamant',     code: 'D', poly: [[0,0],[2,0],[1,1]] },
+    diamond: { name: 'diamant',     code: 'D', poly: [[0,0],[1,0],[0,1]] },
     black:   { name: 'corps noir',  code: 'K', poly: [[0,0],[2,0],[2,1],[0,1]] }
   };
 
@@ -208,17 +208,32 @@ var Orapa = (function () {
     return res;
   }
 
-  function generate(types, rnd) {
-    rnd = rnd || Math.random;
+  // Grid points (and cells) touched by a piece, used to keep gems apart in easy mode.
+  var QP = [[[0, 0], [1, 0]], [[1, 0], [1, 1]], [[0, 1], [1, 1]], [[0, 0], [0, 1]]];
+  function pointsOf(p) {
+    var s = {};
+    p.q.forEach(function (c) {
+      var x = c >> 5, y = (c >> 2) & 7, q = c & 3;
+      QP[q].forEach(function (d) { s[(x + d[0]) + ',' + (y + d[1])] = 1; });
+      s['c' + x + ',' + y] = 1;
+    });
+    return s;
+  }
+  function shares(a, b) { for (var k in a) if (b[k]) return true; return false; }
+
+  function generate(types, rnd, opts) {
+    rnd = rnd || Math.random; opts = opts || {};
     for (var attempt = 0; attempt < 500; attempt++) {
-      var pieces = [], occ = emptyOcc(), ok = true;
+      var pieces = [], pts = [], occ = emptyOcc(), ok = true;
       for (var t = 0; t < types.length; t++) {
-        var opts = shuffle(allPlacements(types[t]), rnd), placed = false;
-        for (var k = 0; k < opts.length; k++) {
-          var p = place(types[t], opts[k][0], opts[k][1], opts[k][2]);
+        var cand = shuffle(allPlacements(types[t]), rnd), placed = false;
+        for (var k = 0; k < cand.length; k++) {
+          var p = place(types[t], cand[k][0], cand[k][1], cand[k][2]);
           if (compatible(occ, p, pieces.length)) {
+            var pp = opts.gap ? pointsOf(p) : null;
+            if (pp && pts.some(function (o) { return shares(o, pp); })) continue;
             p.q.forEach(function (c) { occ[idx(c >> 5, (c >> 2) & 7, c & 3)] = pieces.length; });
-            pieces.push(p); placed = true; break;
+            pieces.push(p); pts.push(pp); placed = true; break;
           }
         }
         if (!placed) { ok = false; break; }
@@ -226,6 +241,55 @@ var Orapa = (function () {
       if (ok && allVisible(pieces, occ)) return pieces;
     }
     throw new Error('Impossible de générer une mine');
+  }
+
+  // How tangled a mine is: rays that touch several gems, and contact points between gems.
+  function metrics(pieces) {
+    var occ = buildOcc(pieces), multi = 0, done = {};
+    ENTRIES.forEach(function (e) {
+      if (done[e.label]) return;
+      var r = trace(pieces, occ, e.label);
+      done[e.label] = 1; if (r.exit) done[r.exit] = 1;
+      var d = {}; r.hits.forEach(function (h) { d[h] = 1; });
+      if (Object.keys(d).length >= 2) multi++;
+    });
+    var pts = pieces.map(pointsOf), contacts = 0;
+    for (var i = 0; i < pts.length; i++) for (var j = i + 1; j < pts.length; j++) {
+      for (var k in pts[i]) if (pts[j][k]) contacts++;
+    }
+    return { multi: multi, contacts: contacts };
+  }
+
+  // level: 'easy' = gems apart and few mixed rays, 'normal' = rulebook, 'hard' = tangled gems.
+  function generateLevel(types, level, rnd) {
+    var best = null, k, p, m, score;
+    if (level === 'easy') {
+      for (k = 0; k < 15; k++) {
+        try { p = generate(types, rnd, { gap: true }); } catch (e) { break; }
+        m = metrics(p); score = m.multi;
+        if (!best || score < best.s) best = { p: p, s: score };
+      }
+      return best ? best.p : generate(types, rnd);
+    }
+    if (level === 'hard') {
+      for (k = 0; k < 40; k++) {
+        p = generate(types, rnd); m = metrics(p); score = m.multi + 2 * m.contacts;
+        if (!best || score > best.s) best = { p: p, s: score };
+      }
+      return best.p;
+    }
+    return generate(types, rnd);
+  }
+
+  // Free placement for proposals: r = quarter turns clockwise, m = mirrored.
+  function orientRM(type, r, m) {
+    var pts = TYPES[type].poly.map(function (p) { return m ? [-p[0], p[1]] : [p[0], p[1]]; });
+    for (var k = 0; k < r; k++) pts = pts.map(function (p) { return [-p[1], p[0]]; });
+    return normalize(pts);
+  }
+  function placeAt(type, r, m, ox, oy) {
+    var abs = orientRM(type, r, m).map(function (p) { return [p[0] + ox, p[1] + oy]; });
+    return { type: type, r: r, m: m, x: ox, y: oy, poly: abs, q: quarters(abs) };
   }
 
   // Compare a proposal with the solution: same gem types on exactly the same quarters.
@@ -241,7 +305,8 @@ var Orapa = (function () {
     W: W, H: H, ROWS: ROWS, BOTTOM: BOTTOM, TYPES: TYPES, MIX: MIX, ENTRIES: ENTRIES,
     orientations: orientations, size: size, place: place, fits: fits, buildOcc: buildOcc,
     compatible: compatible, trace: trace, whatAt: whatAt, cellLabel: cellLabel,
-    generate: generate, sameLayout: sameLayout, allVisible: allVisible
+    generate: generate, generateLevel: generateLevel, metrics: metrics, sameLayout: sameLayout, allVisible: allVisible,
+    orientRM: orientRM, placeAt: placeAt
   };
 })();
 if (typeof module !== 'undefined') module.exports = Orapa;
